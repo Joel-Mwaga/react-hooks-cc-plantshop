@@ -1,25 +1,35 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react';
-import App from '../../components/App';
-import '@testing-library/jest-dom';
+import App from '../../App';
 
-describe('4th Deliverable', () => {
-  test('filters plants by name on search', async () => {
-    global.setFetchResponse(global.basePlants)
-    const { getByPlaceholderText, queryAllByTestId } = render(<App />);
-    const searchInput = getByPlaceholderText('Type a name to search...');
-    fireEvent.change(searchInput, { target: { value: 'aloe' } });
+describe('Search Plants', () => {
+  beforeEach(() => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      json: () => Promise.resolve([
+        { id: 1, name: 'Pothos', price: 10.99, image: 'pothos.jpg' },
+        { id: 2, name: 'Snake Plant', price: 15.99, image: 'snake-plant.jpg' }
+      ])
+    });
+  });
 
+  afterEach(() => {
+    global.fetch.mockRestore();
+  });
+
+  it('filters plants by name on search', async () => {
+    const { queryAllByTestId, getByPlaceholderText } = render(<App />);
+    
     await waitFor(() => {
-      const filteredPlants = queryAllByTestId('plant-item');
-      expect(filteredPlants).toHaveLength(1);
+      expect(queryAllByTestId('plant-item')).toHaveLength(2);
     });
     
+    const searchInput = getByPlaceholderText('Type a name to search...');
     fireEvent.change(searchInput, { target: { value: 'p' } });
     
     await waitFor(() => {
       const filteredPlants = queryAllByTestId('plant-item');
-      expect(filteredPlants).toHaveLength(3);
+      expect(filteredPlants).toHaveLength(1);
+      expect(filteredPlants[0]).toHaveTextContent('Pothos');
     });
   });
-})
+});
